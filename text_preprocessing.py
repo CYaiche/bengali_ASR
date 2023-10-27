@@ -1,7 +1,7 @@
 import os 
 import json
 import pandas as pd 
-from common.common_params import EXTRACT_DIR
+from common.common_params import EXTRACT_DIR, MAX_TEXT_OUTPUT_MINUS_START_CHAR
 
 
 def remove_punctuation(test_str):
@@ -69,7 +69,7 @@ if __name__ == "__main__" :
     
     # remove label that have less then 20 characters and more than 120  (outliers )
     df_clean["len"] = df_clean["sentence_clean"].apply(len)
-    mask = (df_clean["len"] >= 20) & (df_clean["len"] <= 140)
+    mask = (df_clean["len"] >= 20) & (df_clean["len"] <= MAX_TEXT_OUTPUT_MINUS_START_CHAR)
     df_clean = df_clean[mask]
     
     df_clean["sentence"] = df_clean["sentence_clean"]
