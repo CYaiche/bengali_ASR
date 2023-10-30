@@ -55,18 +55,19 @@ class Encoder(nn.Module):
         return out
 
 class Predictor(nn.Module):
-    def __init__(self, max_transcript_length, token_length=1):
+    def __init__(self, max_transcript_length, vocabulary_size, token_length=1):
         super(Predictor, self).__init__()
         # ONE-hot encoding input
         # self.bwv = BengaliWord2Vec()
-        self.rnn    = nn.GRUCell(input_size=token_length, hidden_size=predictor_dim)
+        self.emb    = nn.Embedding(num_embeddings=vocabulary_size, embedding_dim=predictor_dim)
+        self.rnn    = nn.GRUCell(input_size=predictor_dim, hidden_size=predictor_dim)
         self.linear = nn.Linear(predictor_dim, joiner_dim)
         
         self.initial_state = nn.Parameter(torch.randint(0, max_transcript_length, (predictor_dim,), dtype=torch.float))
 
     def forward_one_step(self, input, previous_state):
-        # embedding = self.bwv.get_word_vector(input)
-        state = self.rnn.forward(input, previous_state)
+        embedding = self.emb(input)
+        state = self.rnn.forward(embedding, previous_state)
         out = self.linear(state)
         return out, state
 
