@@ -1,0 +1,5 @@
+
+whisper small : BanglaASR : 0.7396809359873808
+
+Google                    : 1.0117936912095191
+Yellowking                : 0.4944418254971655

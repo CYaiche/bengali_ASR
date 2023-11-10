@@ -4,8 +4,8 @@ import lightning.pytorch as pl
 import torchaudio 
 import torch 
 from torch.utils.data import  DataLoader
-from data_preparation.dataloader import CustomAudioDataset
-from common.common_params import FS, START_TOKEN, MFCC_N_MELS, MFCC_N_FFT, MFCC_HOP_LENGTH, BATCH_SIZE
+from data_preparation.CustomAudioDataset import CustomAudioDataset
+from common.common_params import FS, START_TOKEN, MFCC_N, MFCC_N_FFT, MFCC_HOP_LENGTH, BATCH_SIZE
 from sklearn.model_selection import train_test_split
 
     
@@ -20,7 +20,7 @@ class RNNTDataModule(pl.LightningDataModule):
         self.batch_size         = BATCH_SIZE
         
         self.mfcc   =  torchaudio.transforms.MFCC(sample_rate=FS,       
-                                n_mfcc=MFCC_N_MELS,    # Number of MFCC coefficients
+                                n_mfcc=MFCC_N,    # Number of MFCC coefficients
                                 # 25ms FFT window  10ms frame shift
                                 melkwargs={'n_fft': MFCC_N_FFT, 'hop_length': MFCC_HOP_LENGTH}  
                         )
@@ -68,14 +68,24 @@ class RNNTDataModule(pl.LightningDataModule):
             
         spectrograms = torch.stack(spectrograms)
         sentence_tokenized_pad_s = torch.stack(sentence_tokenized_pad_s)
-        T_f = [ int(t / MFCC_HOP_LENGTH) +1  for t in T] # because of mfcc padding
-        return ( spectrograms, sentence_tokenized_pad_s, T_f, U ) 
+        T_f = [int(t / MFCC_HOP_LENGTH) +1  for t in T] # becuse of mfcc padding
+        return (spectrograms, sentence_tokenized_pad_s, torch.tensor(T_f),  torch.tensor(U)) 
     
     def train_dataloader(self):
-        return DataLoader(self.train_dataset, collate_fn=self.collate_fn, batch_size=self.batch_size, shuffle=True )
+        return DataLoader(self.train_dataset,
+                        collate_fn=self.collate_fn,
+                        batch_size=self.batch_size,
+                        num_workers=4,
+                        # shuffle=True
+                        )
 
     def val_dataloader(self):
-        return DataLoader(self.val_dataset, collate_fn=self.collate_fn,  batch_size=self.batch_size, shuffle=True  )
+        return DataLoader(self.val_dataset,
+                        collate_fn=self.collate_fn,
+                        batch_size=self.batch_size,
+                        num_workers=4,
+                        # shuffle=True
+                        )
 
     # def test_dataloader(self):
     #     return DataLoader(self.mnist_test, batch_size=32)
