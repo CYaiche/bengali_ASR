@@ -3,7 +3,7 @@ import pandas as pd
 
 col = ["id", "ggl_wer", "ykg_wer"]
 baseline = pd.read_csv("/home/nxp66145/clara/bengali_ASR/train_metadata.csv")
-test_df = pd.read_csv("/home/nxp66145/clara/whisper_test.csv")
+test_df = pd.read_csv("/home/nxp66145/clara/whisper_val.csv")
 
 merge = pd.merge(baseline[col], test_df[["id", "sentence"]], how="right" ,on=["id","id"])
 

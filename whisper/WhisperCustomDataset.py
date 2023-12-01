@@ -11,14 +11,20 @@ import sys
 sys.path.append("/home/nxp66145/clara/bengali_ASR/")
 from common.common_params import FS
 from typing import Any, Dict, List, Union
-
+import soundfile as sf 
+import librosa
 
 class WhisperCustomDataset(Dataset):
-    def __init__(self, folder_path, dataframe, whisper_processor):
+    def __init__(self, folder_path, dataframe, whisper_processor, feature_extractor=None,tokenizer=None):
         self.folder_path        = folder_path
         self.dataframe          = dataframe
         self.sampling_rate      = FS
-        self.whisper_processor =  whisper_processor
+        if whisper_processor != None :
+            self.feature_extractor = whisper_processor.feature_extractor
+            self.tokenizer = whisper_processor.tokenizer
+        else : 
+            self.feature_extractor = feature_extractor
+            self.tokenizer = tokenizer
 
     def __len__(self):
         return self.dataframe.shape[0]
@@ -27,25 +33,32 @@ class WhisperCustomDataset(Dataset):
         # this function load a single insctance of the dataset 
         # print(f"idx : {idx}")
         # Audio 
+        batch = {}
         audio_id = self.dataframe["id"][idx]
         file_path =  os.path.join(self.folder_path, f"{audio_id}.mp3") 
-        pcm, sample_rate = torchaudio.load(file_path)
+        speech_array, sampling_rate = torchaudio.load(file_path, format="mp3")
+        speech_array = speech_array[0].numpy()
+        if self.sampling_rate != sampling_rate :
+            speech_array = librosa.resample(np.asarray(speech_array), orig_sr=sampling_rate, target_sr=self.sampling_rate)
+        sf.write(f"/home/nxp66145/clara/bengali_ASR/{file_path.split('/')[-1]}",speech_array, self.sampling_rate)
+        input_features = self.feature_extractor(speech_array, sampling_rate=self.sampling_rate, return_tensors="pt").input_features[0]
+        batch["input_features"] = input_features # self.feature_extractor(pcm16k[0,:], sampling_rate= self.sampling_rate, return_tensors="pt").input_features[0]
 
-        if self.sampling_rate != sample_rate : 
-            pcm16k = torchaudio.functional.resample(pcm, sample_rate, self.sampling_rate)
-        batch = {}
-        batch["input_features"] = self.whisper_processor.feature_extractor(pcm16k[0,:], sampling_rate= self.sampling_rate).input_features[0]
 
         # Label
         sentences               = self.dataframe["sentence"][idx]
-        batch["labels"]         = self.whisper_processor.tokenizer(sentences).input_ids
+        # print(sentences)
+        batch["labels"]         = self.tokenizer(sentences).input_ids
 
         return  batch
 
 
+    
 class DataCollatorSpeechSeq2SeqWithPadding():
-    def __init__(self, processor) : 
+    def __init__(self, processor, bos_id=None) : 
         self.whisper_processor =  processor
+        self.bos_id = bos_id if bos_id != None else self.whisper_processor.tokenizer.bos_token_id
+        print(f"bos_id : {self.bos_id}")
 
     def __call__(self, features: List[Dict[str, Union[List[int], torch.Tensor]]]) -> Dict[str, torch.Tensor]:
 
@@ -63,13 +76,14 @@ class DataCollatorSpeechSeq2SeqWithPadding():
         # we need to tell those attention layers to ignore the padding tokens. 
         # This is done by using an attention mask.
 
-        # replace padding with -100 to ignore loss correctly
-        labels = tokenized_sentences_pad["input_ids"].masked_fill(tokenized_sentences_pad.attention_mask.ne(1), -100)
-        
+        # # replace padding with -100 to ignore loss correctly
+        # labels = tokenized_sentences_pad["input_ids"].masked_fill(tokenized_sentences_pad.attention_mask.ne(1), -100)
+        labels = tokenized_sentences_pad["input_ids"]
         # if bos token is appended in previous tokenization step,
         # cut bos token here as it's append later anyways
-        if (labels[:, 0] == self.whisper_processor.tokenizer.bos_token_id).all().cpu().item():
-            labels = labels[:, 1:]
+        # if (labels[:, 0] == self.bos_id).all().cpu().item():
+        #     labels = labels[:, 1:]
+
 
         batch["labels"] = labels
 
@@ -87,7 +101,7 @@ if __name__ == "__main__" :
     # *************** Prepare dataloaders   *************** # 
     audio_folder_pth         = "/disk3/clara/bengali/train_mp3s"
     df_train    = pd.read_csv("/home/nxp66145/clara/whisper_train.csv")
-    df_val      = pd.read_csv("/home/nxp66145/clara/whisper_test.csv")
+    df_val      = pd.read_csv("/home/nxp66145/clara/whisper_val.csv")
 
 
     train_dataset       = WhisperCustomDataset(audio_folder_pth, df_train, whisper_processor)
