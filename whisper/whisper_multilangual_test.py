@@ -26,8 +26,8 @@ class WhisperTest():
         self.feature_extractor   = self.processor.feature_extractor
         self.tokenizer           = self.processor.tokenizer
         self.model               = WhisperForConditionalGeneration.from_pretrained(model_path).to(self.device)
+        self.model.config.forced_decoder_ids  = self.processor.get_decoder_prompt_ids(language="bengali", task="transcribe")
 
-        self.forced_decoder_ids = self.processor.get_decoder_prompt_ids(language="bengali", task="transcribe")
 
     def run_inference(self, audio_path) : 
         speech_array, sampling_rate = torchaudio.load(audio_path, format="mp3")
@@ -38,7 +38,7 @@ class WhisperTest():
         speech_array = librosa.resample(np.asarray(speech_array), orig_sr=sampling_rate, target_sr=16000)
         input_features = self.feature_extractor(speech_array, sampling_rate=16000, return_tensors="pt").input_features
         # np.save(f"/home/nxp66145/clara/bengali_ASR/whisper/npy/{audio_path.name.split('.')[0]}_spec.npy", input_features, allow_pickle=True)
-        predicted_ids = self.model.generate(inputs=input_features.to(self.device), forced_decoder_ids=self.forced_decoder_ids)[0]
+        predicted_ids = self.model.generate(inputs=input_features.to(self.device))[0]
         transcription = self.tokenizer.decode(predicted_ids, skip_special_tokens=True)
 
         return transcription
