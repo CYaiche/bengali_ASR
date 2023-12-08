@@ -20,13 +20,14 @@ class WhisperTest():
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
         # feature extractor from model
-        whisper_base_model = "bangla-speech-processing/BanglaASR"
-        self.feature_extractor   = WhisperFeatureExtractor.from_pretrained(whisper_base_model)
+        # whisper_base_model = "bangla-speech-processing/BanglaASR"
+        whisper_base_model      = "openai/whisper-small"
+        self.feature_extractor  = WhisperFeatureExtractor.from_pretrained(model_path)
         # self.processor           = WhisperProcessor.from_pretrained(model_path)
 
         # load model or fine-tuned model
         
-        self.tokenizer           = WhisperTokenizer.from_pretrained(model_path)
+        self.tokenizer           = WhisperTokenizer.from_pretrained(whisper_base_model)
         self.model               = WhisperForConditionalGeneration.from_pretrained(model_path).to(self.device)
 
         
@@ -48,8 +49,10 @@ class WhisperTest():
 
 
 
-def run_inference_on_data_set(model_path, test_set, csv_out_path):
+def run_inference_on_data_set(model_path, test_set, csv_out_path, test=False):
     data_loc = Path("/disk3/clara/bengali/train_mp3s/")
+    if test : 
+        data_loc = Path("/disk3/clara/bengali/test/")
     whisper_test = WhisperTest(model_path)
     submission = pd.DataFrame(columns=["id", "sentence"])
 

@@ -46,8 +46,10 @@ class WhisperTest():
 
 
 
-def run_inference_on_data_set(model_path, test_set, csv_out_path):
+def run_inference_on_data_set_multilingual(model_path, test_set, csv_out_path, test=False):
     data_loc = Path("/disk3/clara/bengali/train_mp3s/")
+    if test : 
+        data_loc = Path("/disk3/clara/bengali/test/")
     whisper_test = WhisperTest(model_path)
     submission = pd.DataFrame(columns=["id", "sentence"])
 
@@ -64,6 +66,6 @@ if __name__ == "__main__" :
     csv_out_path = Path("/disk3/clara/bengali/whisper_small_val_100.csv")
 
     df_val                  = pd.read_csv("/home/nxp66145/clara/whisper_val_sample_100.csv")
-    run_inference_on_data_set(model_path,df_val, csv_out_path)
+    run_inference_on_data_set_multilingual(model_path,df_val, csv_out_path)
 
 

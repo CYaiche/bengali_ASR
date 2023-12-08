@@ -4,3 +4,7 @@ whisper small : BanglaASR : 0.7396809359873808
 Google                    : 1.0117936912095191
 Yellowking                : 0.4944418254971655
 Whisper small (OpenAI)    : 3.9698663836163837
+whisper/dry_run_whisper_small_20231201_152421/checkpoint-500 : MEAN WER 0.7756240099769512
+
+/whisper_dry_run_whisper_small_missing_checkpoint/checkpoint-500 : 0MEAN WER 0.7756240099769512
+/whisper_dry_run_whisper_small_missing_checkpoint/checkpoint-1000 : MEAN WER 0.6692371843842432

@@ -36,15 +36,15 @@ if dry_run :
     df_train                 = pd.read_csv("/home/nxp66145/clara/whisper_train_sample_100.csv")
     df_val                   = pd.read_csv("/home/nxp66145/clara/whisper_val_sample_100.csv")
 
-train_dataset   = WhisperCustomDataset(audio_folder_pth, df_train, whisper_processor)
+train_dataset   = WhisperCustomDataset(audio_folder_pth, df_train, whisper_processor, data_augmentation=True)
 val_dataset     = WhisperCustomDataset(audio_folder_pth, df_val, whisper_processor)
 
 data_collator = DataCollatorSpeechSeq2SeqWithPadding(whisper_processor) # in benglaASR bos as been overwritten
 
 # *************** Training : fine-tuning   *************** # 
-test_explanation = "dry_run_whisper_small"
+test_explanation = "dry_run_whisper_small_with_data_augmentation"
 run_name = datetime.now().strftime("%Y%m%d_%H%M%S")
-save_dir = f"/disk2/clara/whisper/{test_explanation}_{run_name}"
+save_dir = f"/disk3/clara/whisper/{test_explanation}"
 
 if not os.path.isdir(save_dir) :
     os.mkdir(save_dir)
@@ -55,8 +55,8 @@ training_args = Seq2SeqTrainingArguments(
     per_device_train_batch_size=8,# 16 
     gradient_accumulation_steps=2,  # increase by 2x for every 2x decrease in batch size
     learning_rate=1e-5,
-    warmup_steps=500, # 500,
-    max_steps=2000, # 4000,
+    warmup_steps=200, # 500,
+    max_steps=1000, # 4000,
     gradient_checkpointing=True,
     fp16=True,
     evaluation_strategy="steps",
@@ -65,7 +65,7 @@ training_args = Seq2SeqTrainingArguments(
     generation_max_length=225,
     save_steps=500, # 1000,
     eval_steps=500, # 1000,
-    logging_steps=25,
+    logging_steps=100,
     report_to=["tensorboard"],
     load_best_model_at_end=True,
     metric_for_best_model="wer",
@@ -110,5 +110,5 @@ trainer = Seq2SeqTrainer(
 trainer.train()
 
 
-
+save_dir = f"/disk3/clara/whisper/MODEL_{test_explanation}_{run_name}"
 trainer.save_model(save_dir)

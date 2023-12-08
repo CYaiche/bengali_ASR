@@ -13,12 +13,15 @@ from common.common_params import FS
 from typing import Any, Dict, List, Union
 import soundfile as sf 
 import librosa
+from numpy import random
+import colorednoise as cn
 
 class WhisperCustomDataset(Dataset):
-    def __init__(self, folder_path, dataframe, whisper_processor=None, feature_extractor=None,tokenizer=None):
+    def __init__(self, folder_path, dataframe, whisper_processor=None, feature_extractor=None,tokenizer=None,data_augmentation=False):
         self.folder_path        = folder_path
         self.dataframe          = dataframe
         self.sampling_rate      = FS
+        self.data_augmentation = data_augmentation
         if whisper_processor != None :
             self.feature_extractor = whisper_processor.feature_extractor
             self.tokenizer = whisper_processor.tokenizer
@@ -40,7 +43,25 @@ class WhisperCustomDataset(Dataset):
         speech_array = speech_array[0].numpy()
         if self.sampling_rate != sampling_rate :
             speech_array = librosa.resample(np.asarray(speech_array), orig_sr=sampling_rate, target_sr=self.sampling_rate)
-       
+
+        if self.data_augmentation :
+            data_augmentation_on_sample =  random.randint(2)
+            data_augmentation_nature =  random.randint(5)
+            if data_augmentation_on_sample == 0 : 
+                if data_augmentation_nature == 0 : 
+                    noise_factor = 0.001
+                    white_noise = np.random.randn(len(speech_array)) * noise_factor
+                    speech_array = speech_array + white_noise
+                elif  data_augmentation_nature == 1 :
+                    noise_factor = 0.001
+                    pink_noise = cn.powerlaw_psd_gaussian(1, len(speech_array)) * noise_factor
+                    speech_array = speech_array + pink_noise
+                elif  data_augmentation_nature == 2 :
+                    speech_array = librosa.effects.pitch_shift(speech_array, sr=self.sampling_rate, n_steps=2)
+                else : 
+                    speech_array = librosa.effects.pitch_shift(speech_array, sr=self.sampling_rate, n_steps=-2)
+
+                    
         batch["input_features"]  = self.feature_extractor(speech_array, sampling_rate=self.sampling_rate, return_tensors="pt").input_features[0]
 
         # Label

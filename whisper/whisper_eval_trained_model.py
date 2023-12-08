@@ -7,11 +7,12 @@ from whisper.WhisperCustomDataset import WhisperCustomDataset
 from transformers import WhisperProcessor
 
 
-model_id                = "dry_run_test_compute_metric_20231124_141914" # "20231114_180857"
-checkpoint = ""
-model_path              = f"/disk2/clara/whisper/{model_id}/{checkpoint}"
+model_id                = "dry_run_whisper_small_missing_checkpoint" # "20231114_180857"
+checkpoint              = "checkpoint-1500"
+model_path              = f"/disk3/clara/whisper/{model_id}/{checkpoint}"
 root_repo               = Path("/home/nxp66145/clara/bengali_ASR/")
-whisper_base_model      = "bangla-speech-processing/BanglaASR"
+# whisper_base_model      = "bangla-speech-processing/BanglaASR"
+whisper_base_model      = "openai/whisper-small"
 csv_out_path            = root_repo / f"whisper_{model_id}.csv"
 
 audio_folder_pth        = "/disk3/clara/bengali/train_mp3s"
